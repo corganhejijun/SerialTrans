@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Threading;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace SerialTrans
@@ -11,13 +11,21 @@ namespace SerialTrans
         public Form1()
         {
             InitializeComponent();
-            string[] portNames = SerialTrans.getSerialPortList();
             foreach (int rate in BAUD_RATE)
             {
                 comboBoxBaudRate1.Items.Add(rate.ToString());
                 comboBoxBaudRate2.Items.Add(rate.ToString());
             }
             comboBoxBaudRate1.SelectedIndex = comboBoxBaudRate2.SelectedIndex = 0;
+            initPortList();
+            deleOnGetSerialMsg = new DeleOnGetSerialMsg(onGetSerialMsg);
+        }
+
+        void initPortList()
+        {
+            string[] portNames = SerialTrans.getSerialPortList();
+            comboBoxCom1.Items.Clear();
+            comboBoxCom2.Items.Clear();
             if (portNames != null)
             {
                 foreach (string name in portNames)
@@ -26,9 +34,9 @@ namespace SerialTrans
                     comboBoxCom2.Items.Add(name);
                 }
                 comboBoxCom1.SelectedIndex = 0;
-                comboBoxCom2.SelectedIndex = 1;
+                if (portNames.Length > 1)
+                    comboBoxCom2.SelectedIndex = 1;
             }
-            deleOnGetSerialMsg = new DeleOnGetSerialMsg(onGetSerialMsg);
         }
 
         delegate void DeleOnGetSerialMsg(SerialPort port);
@@ -44,8 +52,13 @@ namespace SerialTrans
                 return;
             }
             string msg = port.ReadExisting();
-            textBoxSent.Text += port.PortName + "向" + otherPort.PortName + "转发：" + msg + "\r\n";
+            showMsgInTextBox(port.PortName + "向" + otherPort.PortName + "转发：" + msg + "\r\n");
             otherPort.Write(msg);
+        }
+
+        void showMsgInTextBox(string msg)
+        {
+            textBoxSent.Text += msg;
             textBoxSent.SelectionStart = textBoxSent.TextLength;
             textBoxSent.ScrollToCaret();
             textBoxSent.Refresh();
@@ -55,6 +68,10 @@ namespace SerialTrans
         private SerialPort serialPort2;
         void openButtonClicked(ref SerialPort serialPort, Button button, ComboBox comboBox)
         {
+            if (comboBox.Text.Equals(""))
+            {
+                return;
+            }
             if (serialPort == null)
             {
                 serialPort = new SerialPort();
@@ -101,7 +118,10 @@ namespace SerialTrans
             if (comboBoxCom1.Text.Equals(comboBoxCom2.Text))
             {
                 MessageBox.Show("不能同时打开同一个串口！");
-                combo.SelectedIndex += 1;
+                if (combo.Items.Count == combo.SelectedIndex + 1)
+                    combo.SelectedItem = null;
+                else
+                    combo.SelectedIndex += 1;
             }
         }
 
@@ -117,10 +137,35 @@ namespace SerialTrans
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
+            releaseSerialPorts();
+        }
+
+        void releaseSerialPorts()
+        {
             if (serialPort1 != null)
                 serialPort1.Close();
             if (serialPort2 != null)
                 serialPort2.Close();
+        }
+
+        // usb消息定义
+        public const int WM_DEVICE_CHANGE = 0x219;
+
+        /// <summary>
+        /// 检测USB串口的拔插
+        /// </summary>
+        /// <param name="m"></param>
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == WM_DEVICE_CHANGE)        // 捕获USB设备的拔出消息WM_DEVICECHANGE
+            {
+                showMsgInTextBox("检测到设备变化，请重新设置串口!\r\n");
+                releaseSerialPorts();
+                initPortList();
+                buttonOpenCom1.Text = "Open";
+                buttonOpenCom2.Text = "Open";
+            }
+            base.WndProc(ref m);
         }
     }
 }
