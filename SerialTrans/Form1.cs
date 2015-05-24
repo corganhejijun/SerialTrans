@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace SerialTrans
@@ -33,7 +32,8 @@ namespace SerialTrans
                     comboBoxCom1.Items.Add(name);
                     comboBoxCom2.Items.Add(name);
                 }
-                comboBoxCom1.SelectedIndex = 0;
+                if (portNames.Length > 0)
+                    comboBoxCom1.SelectedIndex = 0;
                 if (portNames.Length > 1)
                     comboBoxCom2.SelectedIndex = 1;
             }
@@ -115,7 +115,7 @@ namespace SerialTrans
 
         void selectPortChange(ComboBox combo)
         {
-            if (comboBoxCom1.Text.Equals(comboBoxCom2.Text))
+            if (!comboBoxCom1.Text.Equals("") && comboBoxCom1.Text.Equals(comboBoxCom2.Text))
             {
                 MessageBox.Show("不能同时打开同一个串口！");
                 if (combo.Items.Count == combo.SelectedIndex + 1)
