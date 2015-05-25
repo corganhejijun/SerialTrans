@@ -48,7 +48,7 @@ namespace SerialTrans
             SerialPort otherPort = port == serialPort1 ? serialPort2 : serialPort1;
             if (otherPort == null)
             {
-                textBoxSent.Text += "当前仅开启一个串口，无法转发。" + port.PortName + "收到：" + port.ReadExisting() + "\r\n";
+                showMsgInTextBox("当前仅开启一个串口，无法转发。" + port.PortName + "收到：" + port.ReadExisting() + "\r\n");
                 return;
             }
             string msg = port.ReadExisting();
@@ -58,10 +58,7 @@ namespace SerialTrans
 
         void showMsgInTextBox(string msg)
         {
-            textBoxSent.Text += msg;
-            textBoxSent.SelectionStart = textBoxSent.TextLength;
-            textBoxSent.ScrollToCaret();
-            textBoxSent.Refresh();
+            textBoxSent.Text = msg + textBoxSent.Text;
         }
 
         private SerialPort serialPort1;
