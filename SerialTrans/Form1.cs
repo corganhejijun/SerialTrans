@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace SerialTrans
 {
@@ -29,7 +30,11 @@ namespace SerialTrans
             {
                 foreach (string name in portNames)
                 {
+                    if (comboBoxCom1.Items.Contains(name))
+                        continue;
                     comboBoxCom1.Items.Add(name);
+                    if (comboBoxCom2.Items.Contains(name))
+                        continue;
                     comboBoxCom2.Items.Add(name);
                 }
                 if (portNames.Length > 0)
@@ -140,9 +145,15 @@ namespace SerialTrans
         void releaseSerialPorts()
         {
             if (serialPort1 != null)
+            {
                 serialPort1.Close();
+                serialPort1 = null;
+            }
             if (serialPort2 != null)
+            {
                 serialPort2.Close();
+                serialPort2 = null;
+            }
         }
 
         // usb消息定义
