@@ -8,6 +8,7 @@ namespace SerialTrans
     public partial class Form1 : Form
     {
         readonly int[] BAUD_RATE = {9600, 14400, 19200, 38400, 56000, 57600, 115200};
+        Writer writer;
         public Form1()
         {
             InitializeComponent();
@@ -19,6 +20,7 @@ namespace SerialTrans
             comboBoxBaudRate1.SelectedIndex = comboBoxBaudRate2.SelectedIndex = 0;
             initPortList();
             deleOnGetSerialMsg = new DeleOnGetSerialMsg(onGetSerialMsg);
+            writer = new Writer();
         }
 
         void initPortList()
@@ -51,12 +53,21 @@ namespace SerialTrans
         void onGetSerialMsg(SerialPort port)
         {
             SerialPort otherPort = port == serialPort1 ? serialPort2 : serialPort1;
+            string msg = port.ReadExisting();
+            try
+            {
+                writer.writeFile(msg);
+                showMsgInTextBox("已写入文件\r\n");
+            }
+            catch (Exception e)
+            {
+                showMsgInTextBox("错误：" + e.ToString() + "\r\n");
+            }
             if (otherPort == null)
             {
-                showMsgInTextBox("当前仅开启一个串口，无法转发。" + port.PortName + "收到：" + port.ReadExisting() + "\r\n");
+                showMsgInTextBox("当前仅开启一个串口，无法转发。" + port.PortName + "收到：" + msg + "\r\n");
                 return;
             }
-            string msg = port.ReadExisting();
             showMsgInTextBox(port.PortName + "向" + otherPort.PortName + "转发：" + msg + "\r\n");
             otherPort.Write(msg);
         }
